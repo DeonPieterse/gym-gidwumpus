@@ -1,0 +1,2 @@
+from gym_gidwumpus.envs.gidwumpus_env import GidWumpus
+from gym_gidwumpus.envs.gidwumpus_extrahard_env import GidWumpusExtraHardEnv
