@@ -1,178 +1,160 @@
 import gym
-from gym import error, spaces, utils
+import numpy as np
+from gym import spaces, error, utils
 from gym.utils import seeding
 
-import numpy as np
-
-LEFT = 0
+UP = 0
 DOWN = 1
-RIGHT = 2
-UP = 3
+LEFT = 2
+RIGHT = 3
 
 MAPS = {
     "4x4": [
-        "SBPB",
-        "TEBE",
-        "WGPB",
-        "TEBP"
-    ],
-    "8x8": [
-        "SEEEEEEE",
-        "BEEEBEEE",
-        "PBEBPBEE",
-        "BBEBBBEB",
-        "BPBPBPBP",
-        "BPBBBPBB",
-        "EBEEEBTE",
-        "EEEEETWG",
+        ['S', 'B', 'P', 'B'],
+        ['T', 'E', 'B', 'E'],
+        ['W', 'G', 'P', 'B'],
+        ['T', 'E', 'B', 'P']
     ]
 }
+ENDSTATES = ['W', 'P', 'G']
 
-# TODO: MAP GENERATOR - NOT DONE YET
-def generateRandom_map(size=8, p=0.8):
-    """Generates a random valid map (one that has a path from start to goal)
-    :param size: size of each side of the grid
-    :param p: probability that a tile is empty
-    """
-    valid = False
+STARTSTATES = ['S']
 
-    # DFS to check that it's a valid path
-    def is_valid(res):
-        frontier, discovered = [], set()
-        frontier.append((0,0))
-        while frontier:
-            r, c = frontier.pop()
-            if not (r,c) in discovered:
-                discovered.add((r,c))
-                directions = [(1, 0), (0, 1), (-1, 0), (0, -1)]
-                for x, y in directions:
-                    r_new = r + x
-                    c_new = c + y
-                    if r_new < 0 or r_new > size or c_new < 0 or c_new >= size:
-                        continue
-                    if res[r_new][c_new] == 'G':
-                        return True
-                    if (res[r_new][c_new] not in '#P' or '#W'):
-                        frontier.append((r_new, c_new))
-        return False
-    
-    while not valid:
-        p = min(1, p)
-        res = np.random.choice(['B', 'P', 'T', 'E', 'W'], (size, size), p=[p, 1-p])
-        res[0][0] = 'S'
-        res[-1][-1] = 'G'
-        valid = is_valid(res)
-    return ["".join(x) for x in res]
+REWARDS = {
+    'S': 0,
+    'P': -1,
+    'W': -1,
+    'G': 1,
+    'B': 0.2,
+    'T': 0.2,
+    'E': 0.5
+}
 
-def categoricalSample(probN, npRandom):
-    """
-    Sample from categorical distribution (What is this?)
-    Each row specifies class probabilities
-    """
-    probN = np.asarray(probN)
-    csprobN = np.cumsum(probN) #numpy cumulative sum.
-    return (csprobN > npRandom.rand()).argmax()
 
-class GidWumpus(gym.env):
-    """
-    The Wumpus world is a dangerous one, but for the daring adventurer that dares
-    to find the missing pile of gold it is worth the risk.
+class Tile(object):
+    def __init__(self, states=[]):
+        self.states = states
 
-    S : Start, safe
-    B : Breeze, safe
-    P : Pit, fall to your doom
-    T : Stench, safe but the wumpus is adjacent
-    E : Empty, safe
-    G : Goal, where the gold is located
-    W : Wumpus, this thing will eat you
 
-    The episode ends when you reach the goal, fall in a pit or meet the Wumpus.
-    You recieve a reward of 1 if you reach the goal, 0.5 if you reach a stench or a breeze, and zero otherwise
-    """
-    
-    metadata = {'render.modes' : ['human']}
+class Agent(object):
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
 
-    def __init__(self, nS, nA, P, isd, desc=None, mapName="8x8"):
-        self.P = P
-        self.isd = isd
-        self.lastaction = None # For rendering
-        self.nS = nS
-        self.nA = nA
+    def getXY(self):
+        x, y = self.x, self.y
+        return (x, y)
 
-        self.actionSpace = spaces.Discrete(self.nA)
-        self.observationSpace = spaces.Discrete(self.nS)
+    def setXY(self, x, y):
+        self.x = x
+        self.y = y
 
-        self.seed()
-        self.s = categoricalSample(self.isd, self.npRandom)
-        self.lastaction = None
+    def getX(self):
+        return self.x
 
-        if desc is None and mapName is None:
-            # Not done
-            #desc = generate_random_map()
-            desc = MAPS[mapName] #wrong
-        elif desc is None:
-            desc = MAPS[mapName]
+    def getY(self):
+        return self.y
 
-        self.desc = desc = np.asarray(desc, dtype='c')
-        self.nrow, self.ncol = nrow, ncol = desc.shape
+    def setX(self, x):
+        self.x = x
 
-        def to_s(row, col):
-            return row*ncol + col
+    def setY(self, Y):
+        self.y = Y
 
-        def inc(row, col, a):
-            if a == LEFT:
-                col = max(col-1,0)
-            elif a == DOWN:
-                row = min(row+1,nrow-1)
-            elif a == RIGHT:
-                col = min(col+1,ncol-1)
-            elif a == UP:
-                row = max(row-1,0)
-            return (row, col)
-        
-        for row in range(nrow):
-            for col in range(ncol):
-                s = to_s(row, col)
-                for a in range(4):
-                    li = P[s][a]
-                    letter = desc[row, col]
-                    if letter in b'GH':
-                        li.append((1.0, s, 0, True))
-                    else:
-                        newrow, newcol = inc(row, col, a)
-                        newstate = to_s(newrow, newcol)
-                        newletter = desc[newrow, newcol]
-                        done = bytes(newletter) in b'GH'
-                        rew = float(newletter == b'G')
-                        li.append((1.0, newstate, rew, done))
 
-    def seed(self, seed=None):
-        self.npRandom, seed = seeding.npRandomm(seed)
-        return [seed]
-    
-    def reset(self):
-        self.s = categoricalSample(self.isd, self.np_random)
-        self.lastaction = None
-        return self.s
+class GidWumpusEnv(gym.Env):
+    metadata = {'render.modes': ['human']}
+
+    def __init__(self, mapName="4x4", nRow=None, nCol=None):
+        self.grid = MAPS[mapName]
+        self.nRow, self.nCol = nRow, nCol = len(self.grid), len(self.grid[0])
+        self.stateSpace = np.zeros((nRow, nCol))
+        self.actionSpace = [UP, DOWN, LEFT, RIGHT]
+        self.endStates = ENDSTATES
+        self.startStates = STARTSTATES
+        self.rewards = REWARDS
+        self.action_space = spaces.Discrete(len(self.actionSpace))
+        self.observation_space = spaces.Box(low=0, high=(nRow * nCol), shape=(self.nRow, self.nCol), dtype=np.uint8)
+        agentX, agentY = self.index_2d(self.grid, self.startStates[0])
+        self.agent = Agent(agentX, agentY)
+
+    def index_2d(self, myList, v):
+        for i, x in enumerate(myList):
+            if v in x:
+                return (i, x.index(v))
+
+    def agentMove(self, currentRow, currentCol, action):
+        if action == 0:
+            currentRow = currentRow - 1
+        elif action == 1:
+            currentRow = currentRow + 1
+        elif action == 2:
+            currentCol = currentCol - 1
+        elif action == 3:
+            currentCol = currentCol + 1
+        return (currentRow, currentCol)
+
+    def getState(self):
+        x, y = self.agent.getXY
+        state = self.grid[x][y]
+        return state
+
+    def setState(self, state):
+        x, y = state
+        self.agent.setXY(x, y)
+
+    def getReward(self, state):
+        if self.offGridMove(state):
+            return -1
+        else:
+            x, y = state
+            return self.rewards.get(self.grid[x][y])
+
+    def offGridMove(self, newState):
+        x, y = newState
+        if x not in range(len(self.stateSpace)) or y not in range(len(self.stateSpace[0])):
+            return True
+        else:
+            return False
+
+    def isTerminalState(self, state):
+        x, y = state
+        if self.offGridMove(state):
+            return True
+        elif self.grid[x][y] in self.endStates:
+            return True
+        else:
+            return False
 
     def step(self, action):
-        transitions = self.P[self.s][a]
-        i = categoricalSample([t[0] for t in transitions], self.npRandom)
-        p, s, r, d = transitions[i]
-        self.s = s
-        self.lastaction = a
-        return (s, r, d, {"prob" : p})
+        x, y = self.agent.getX(), self.agent.getY()
+        resultingState = self.agentMove(x, y, action)
 
-        #Returns a list of four things: Next State, Reward, Current State, Bool stating if the current state of model is done and some additional info on our problem.
+        if not self.offGridMove(resultingState):
+            self.setState(resultingState)
+            reward = self.getReward(resultingState)
+            return resultingState, reward, self.isTerminalState((self.agent.getX(), self.agent.getY())), None
+        else:
+            reward = self.getReward(resultingState)
+            self.setState(resultingState)
+            return (self.agent.getX(), self.agent.getY()), reward, self.isTerminalState((self.agent.getX(), self.agent.getY())), None
 
-    def render(self, mode='human'):
-        screen_width = 800
-        screen_height = 400
+    def reset(self):
+        agentX, agentY = self.index_2d(self.grid, self.startStates[0])
+        self.agent.setXY(agentX, agentY)
+        return (agentX, agentY)
 
-        #Gives out information on behaviour of our environment up to present.
+    def render(self, mode='human', close=False):
+        for row in self.grid:
+            r = ""
+            for col in row:
+                gridRow, gridCol = (self.grid.index(row), row.index(col))
+                x, y = self.agent.getX(), self.agent.getY()
+                if (x, y) == (gridRow, gridCol):
+                    r = r + "A"
+                else:
+                    r = r + self.grid[gridRow][gridCol]
+            print(r)
 
-    # def close(self):
-    #     #incomplete
-    #     print()
-
-
+    def close(self):
+        print()

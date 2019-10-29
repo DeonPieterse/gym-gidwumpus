@@ -1,5 +1,5 @@
 The entire environment can be imported as a module into your python
- script and used as an environment to run with open AI gym's testing framework.
+scripts and used as an environment to run with open AI gym's testing framework.
 
 To install the gidwumpus environment, go to gym-gidwumpus root folder and run the command:
 pip install -e
