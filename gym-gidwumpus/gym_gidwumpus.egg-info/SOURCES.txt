@@ -1,6 +1,0 @@
-README.md
-setup.py
-gym_gidwumpus.egg-info/PKG-INFO
-gym_gidwumpus.egg-info/SOURCES.txt
-gym_gidwumpus.egg-info/dependency_links.txt
-gym_gidwumpus.egg-info/top_level.txt
