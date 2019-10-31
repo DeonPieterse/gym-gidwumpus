@@ -1,6 +1,5 @@
 import gym
 import gym_gidwumpus
-from datetime import date
 
 env = gym.make('gidwumpus-v0')
 
