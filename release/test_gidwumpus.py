@@ -1,26 +1,58 @@
 import gym
 import gym_gidwumpus
+import numpy as np
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
 
 env = gym.make('gidwumpus-v0')
 
-for episode in range(100):
-    observation = env.reset()
-    print('Observation RESETED', observation)
-    for t in range(100):
-        print('Observation before action: ', observation)
-        action = env.action_space.sample()
-        print('Action: ', action)
-        observation, reward, done, info = env.step(action)
-        print('Observation after action: ', observation)
-        print('Reward: ', reward)
-        print('Done: ', done)
-        print('Info: ', info)
-        env.render()
-        if reward == 1:
-            print("---------------------------------------------------------------------------------------------------------------------------------------")
-        print("||")
-        if done:
-            print("Episode finished after {} timesteps".format(t+1))
-            print("Episode ended: {}\n".format(episode+1))
-            print("========================================================================================================================================\n")
-            break
+
+ALPHA = 0.1
+GAMMA = 1.0
+EPS = 1.0
+
+actionSpaceSize = env.action_space.n
+x, y = env.observation_space.shape
+stateSpaceSize = x*y
+
+qTable = np.zeros((stateSpaceSize, actionSpaceSize))
+
+numGames = 10000000
+totalRewards = np.zeros(numGames)
+
+
+def maxAction(qTable, state, actions):
+    values = np.array([qTable[state, a] for a in actions])
+    x, y = action = np.argmax(values, axis=0)
+    return actions[y]
+
+
+for i in range(numGames):
+    if i % 5000 == 0:
+        print('starting game', i)
+
+        done = False
+        episodeRewards = 0
+        observation = env.reset()
+
+        while not done:
+            rand = np.random.random()
+            action = maxAction(qTable, observation, env.unwrapped.actionSpace) if rand < (1-EPS) \
+                else env.action_space.sample()
+            observation_, reward, done, info = env.step(action)
+            episodeRewards += reward
+            action = maxAction(qTable, observation, env.unwrapped.actionSpace)
+            qTable[observation, action] = qTable[observation, action] \
+                + ALPHA * (reward + GAMMA * qTable[observation, action] - qTable[observation, action])
+            observation = observation_
+            clear_output()
+            env.render()
+
+        if EPS - 2 / numGames > 0:
+            EPS -= 2 / numGames
+        else:
+            EPS = 0
+        totalRewards[i] = episodeRewards
+
+plt.plot(totalRewards)
+plt.show()
