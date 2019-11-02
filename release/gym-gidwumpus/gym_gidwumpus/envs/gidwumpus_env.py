@@ -16,20 +16,31 @@ MAPS = {
         ['T', 'E', 'B', 'P']
     ]
 }
-ENDSTATES = ['W', 'P', 'G']
+
+#ENDSTATES = ['W', 'P', 'G']
+ENDSTATES = ['G']
 
 STARTSTATES = ['S']
+
+# REWARDS = {
+#     'S': 0,
+#     'P': -1,
+#     'W': -1,
+#     'G': 1,
+#     'B': 0.2,
+#     'T': 0.2,
+#     'E': 0.5
+# }
 
 REWARDS = {
     'S': 0,
     'P': -1,
     'W': -1,
     'G': 1,
-    'B': 0.2,
-    'T': 0.2,
-    'E': 0.5
+    'B': 0,
+    'T': 0,
+    'E': 0
 }
-
 
 class Tile(object):
     def __init__(self, states=[]):
@@ -65,7 +76,8 @@ class Agent(object):
 class GidWumpusEnv(gym.Env):
     metadata = {'render.modes': ['human']}
 
-    def __init__(self, mapName="4x4", nRow=None, nCol=None):
+    def __init__(self, mapName="4x4", nRow=None, nCol=None, hardBorder=True):
+        self.hardBorder = hardBorder
         self.grid = MAPS[mapName]
         self.nRow, self.nCol = nRow, nCol = len(self.grid), len(self.grid[0])
         self.stateSpace = np.zeros((nRow, nCol))
@@ -84,15 +96,26 @@ class GidWumpusEnv(gym.Env):
                 return (i, x.index(v))
 
     def agentMove(self, currentRow, currentCol, action):
-        if action == 0:
-            currentRow = currentRow - 1
-        elif action == 1:
-            currentRow = currentRow + 1
-        elif action == 2:
-            currentCol = currentCol - 1
-        elif action == 3:
-            currentCol = currentCol + 1
-        return (currentRow, currentCol)
+        if self.hardBorder:
+            if action == 0:
+                currentRow = max(currentRow - 1, 0)
+            elif action == 1:
+                currentRow = min(currentRow + 1, self.nRow-1)
+            elif action == 2:
+                currentCol = max(currentCol - 1, 0)
+            elif action == 3:
+                currentCol = min(currentCol + 1, self.nCol-1)
+            return (currentRow, currentCol)
+        else:
+            if action == 0:
+                currentRow = currentRow - 1
+            elif action == 1:
+                currentRow = currentRow + 1
+            elif action == 2:
+                currentCol = currentCol - 1
+            elif action == 3:
+                currentCol = currentCol + 1
+            return (currentRow, currentCol)
 
     def getState(self):
         x, y = self.agent.getXY
