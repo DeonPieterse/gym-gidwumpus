@@ -9,7 +9,7 @@ env = gym.make('gidwumpus-v0')
 
 #env.unwrapped.hardBorder = True
 
-ALPHA = 0.1
+ALPHA = 0.01
 GAMMA = 1.0
 EPS = 1.0
 
@@ -19,10 +19,12 @@ stateSpaceSize = x*y
 
 qTable = np.zeros((stateSpaceSize, actionSpaceSize))
 
-numGames = 50000
-#numGames = 100000000
+numberOfEpisodes = 1000
+#numberOfEpisodes = 100000000
 
-totalRewards = np.zeros(numGames)
+maximumStepsPerEpisode = 100
+
+totalRewards = np.zeros(numberOfEpisodes)
 
 
 def maxAction(qTable, state, actions):
@@ -32,37 +34,37 @@ def maxAction(qTable, state, actions):
 
 
 timerStart = datetime.datetime.now()
-for i in range(numGames):
-    if i % 5000 == 0:
+for i in range(numberOfEpisodes):
+    if i % 1000 == 0:
         print('starting game', i)
 
+    state = env.reset()
     done = False
     episodeRewards = 0
-    observation = env.reset()
 
-    while not done:
-        rand = np.random.random()
-        action = maxAction(qTable, observation, env.unwrapped.actionSpace) if rand < (1-EPS) \
-            else env.action_space.sample()
-        observation_, reward, done, info = env.step(action)
-        episodeRewards += reward
-        action = maxAction(qTable, observation, env.unwrapped.actionSpace)
-        qTable[observation, action] = qTable[observation, action] \
-            + ALPHA * (reward + GAMMA * qTable[observation, action] - qTable[observation, action])
-        observation = observation_
-        # print('======')
-        # env.render()
-        # print('======')
-
-    if EPS - 2 / numGames > 0:
-        EPS -= 2 / numGames
+    for step in range(maximumStepsPerEpisode):
+        if not done:
+            rand = np.random.random()
+            action = maxAction(qTable, state, env.unwrapped.actionSpace) if rand < (1-EPS) \
+                else env.action_space.sample()
+            newState, reward, done, info = env.step(action)
+            episodeRewards += reward
+            action = maxAction(qTable, state, env.unwrapped.actionSpace)
+            qTable[state, action] = qTable[state, action] \
+                + ALPHA * (reward + GAMMA * qTable[state, action] - qTable[state, action])
+            state = newState
+            # print('======')
+            # env.render()
+            # print('======')
+    if EPS - 2 / numberOfEpisodes > 0:
+        EPS -= 2 / numberOfEpisodes
     else:
         EPS = 0
+
     totalRewards[i] = episodeRewards
 timerEnd = datetime.datetime.now()
 
 print(timerEnd - timerStart)
 
-print(qTable)
 plt.plot(totalRewards)
 plt.show()

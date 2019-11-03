@@ -17,30 +17,29 @@ MAPS = {
     ]
 }
 
-#ENDSTATES = ['W', 'P', 'G']
-ENDSTATES = ['G']
+ENDSTATES = ['W', 'P', 'G']
 
 STARTSTATES = ['S']
-
-# REWARDS = {
-#     'S': 0,
-#     'P': -1,
-#     'W': -1,
-#     'G': 1,
-#     'B': 0.2,
-#     'T': 0.2,
-#     'E': 0.5
-# }
 
 REWARDS = {
     'S': 0,
     'P': -1,
     'W': -1,
     'G': 1,
-    'B': 0,
-    'T': 0,
-    'E': 0
+    'B': 0.2,
+    'T': 0.2,
+    'E': 0.5
 }
+
+# REWARDS = {
+#     'S': 0,
+#     'P': -1,
+#     'W': -1,
+#     'G': 1,
+#     'B': 0,
+#     'T': 0,
+#     'E': 0
+# }
 
 class Tile(object):
     def __init__(self, states=[]):
