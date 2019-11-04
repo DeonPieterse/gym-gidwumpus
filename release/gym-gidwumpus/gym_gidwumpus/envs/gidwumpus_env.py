@@ -10,12 +10,19 @@ RIGHT = 3
 
 MAPS = {
     "4x4": [
-        ['S', 'B', 'P', 'B'],
+        ['S', 'E', 'E', 'E'],
         ['T', 'E', 'B', 'E'],
-        ['W', 'G', 'P', 'B'],
-        ['T', 'E', 'B', 'P']
+        ['W', 'B', 'P', 'B'],
+        ['T', 'E', 'B', 'G']
     ]
+    # "4x4": [
+    #     ['S', 'B', 'P', 'B'],
+    #     ['T', 'E', 'B', 'E'],
+    #     ['W', 'G', 'P', 'B'],
+    #     ['T', 'E', 'B', 'P']
+    # ]
 }
+
 
 ENDSTATES = ['W', 'P', 'G']
 
@@ -33,8 +40,8 @@ REWARDS = {
 
 # REWARDS = {
 #     'S': 0,
-#     'P': -1,
-#     'W': -1,
+#     'P': 0,
+#     'W': 0,
 #     'G': 1,
 #     'B': 0,
 #     'T': 0,
@@ -85,7 +92,7 @@ class GidWumpusEnv(gym.Env):
         self.startStates = STARTSTATES
         self.rewards = REWARDS
         self.action_space = spaces.Discrete(len(self.actionSpace))
-        self.observation_space = spaces.Box(low=0, high=(nRow * nCol), shape=(self.nRow, self.nCol), dtype=np.uint8)
+        self.observation_space = spaces.Discrete(nRow * nCol) #spaces.Box(low=0, high=(nRow * nCol), shape=(self.nRow, self.nCol), dtype=np.uint8)
         agentX, agentY = self.index_2d(self.grid, self.startStates[0])
         self.agent = Agent(agentX, agentY)
 
@@ -151,32 +158,35 @@ class GidWumpusEnv(gym.Env):
     def step(self, action):
         x, y = self.agent.getX(), self.agent.getY()
         resultingState = self.agentMove(x, y, action)
+        sX, sY = self.agentMove(x, y, action)
+        returnState = sX * self.nRow + sY
 
         if not self.offGridMove(resultingState):
             self.setState(resultingState)
             reward = self.getReward(resultingState)
-            return resultingState, reward, self.isTerminalState((self.agent.getX(), self.agent.getY())), None
+            return returnState, reward, self.isTerminalState((self.agent.getX(), self.agent.getY())), None
         else:
             reward = self.getReward(resultingState)
             self.setState(resultingState)
-            return (self.agent.getX(), self.agent.getY()), reward, self.isTerminalState((self.agent.getX(), self.agent.getY())), None
+            return (self.agent.getX() * self.nRow + self.agent.getY()), reward, self.isTerminalState((self.agent.getX(), self.agent.getY())), None
 
     def reset(self):
         agentX, agentY = self.index_2d(self.grid, self.startStates[0])
         self.agent.setXY(agentX, agentY)
-        return (agentX, agentY)
+        return (agentX * self.nRow + agentY)
 
     def render(self, mode='human', close=False):
-        for row in self.grid:
-            r = ""
-            for col in row:
-                gridRow, gridCol = (self.grid.index(row), row.index(col))
-                x, y = self.agent.getX(), self.agent.getY()
-                if (x, y) == (gridRow, gridCol):
-                    r = r + "A"
+        print('-------------------------')
+        p = ''
+        for indexRow, row in enumerate(self.grid):
+            for indexCol, col in enumerate(row):
+                if self.agent.getXY() == (indexRow, indexCol):
+                    p += 'A\t'
                 else:
-                    r = r + self.grid[gridRow][gridCol]
-            print(r)
+                    p += col + '\t'
+            p += '\n'
+        print(p)
+        print('-------------------------')
 
     def close(self):
         print()

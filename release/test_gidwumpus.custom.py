@@ -1,26 +1,78 @@
 import gym
 import gym_gidwumpus
+import numpy as np
+import matplotlib.pyplot as plt
+from IPython.display import clear_output
+import datetime
 
 env = gym.make('gidwumpus-v0')
 
-for episode in range(100):
-    observation = env.reset()
-    print('Observation RESETED', observation)
-    for t in range(100):
-        print('Observation before action: ', observation)
-        action = env.action_space.sample()
-        print('Action: ', action)
-        observation, reward, done, info = env.step(action)
-        print('Observation after action: ', observation)
-        print('Reward: ', reward)
-        print('Done: ', done)
-        print('Info: ', info)
-        env.render()
-        if reward == 1:
-            print("---------------------------------------------------------------------------------------------------------------------------------------")
-        print("||")
+numberOfEpisodes = 1000
+maximumStepsPerEpisode = 20
+
+actionSpaceSize = env.action_space.n
+x, y = env.observation_space.shape
+stateSpaceSize = x*y
+
+qTable = np.zeros((stateSpaceSize, actionSpaceSize))
+
+ALPHA = 0.01    #learning rate?
+GAMMA = 1.0     #discount rate?
+
+explorationRate = 1
+maxExplorationRate = 1
+minExplorationRate = 0.01
+explorationDecayRate = 0.001
+
+EPS = 1.0
+
+totalRewardsAllEpisodes = np.zeros(numberOfEpisodes)
+
+
+def maxAction(qTable, state, actions):
+    values = np.array([qTable[state, a] for a in actions])
+    x, y = np.argmax(values, axis=0)
+    return actions[y]
+
+
+timerStart = datetime.datetime.now()
+for i in range(numberOfEpisodes):
+    if i % 1000 == 0:
+        print('starting game', i)
+
+    state = env.reset()
+    done = False
+    episodeRewards = 0
+
+    for step in range(maximumStepsPerEpisode):
+        rand = np.random.random()
+        
+        # action = maxAction(qTable, state, env.unwrapped.actionSpace) if rand < (1-EPS) \
+        #     else env.action_space.sample()
+        
+        newState, reward, done, info = env.step(action)
+        episodeRewards += reward
+        action = maxAction(qTable, state, env.unwrapped.actionSpace)
+        qTable[state, action] = qTable[state, action] \
+            + ALPHA * (reward + GAMMA * qTable[state, action] - qTable[state, action])
+        state = newState
+        # print('======')
+        # env.render()
+        # print('======')
+        
+        # Has the episode ended
         if done:
-            print("Episode finished after {} timesteps".format(t+1))
-            print("Episode ended: {}\n".format(episode+1))
-            print("========================================================================================================================================\n")
             break
+
+    # if EPS - 2 / numberOfEpisodes > 0:
+    #     EPS -= 2 / numberOfEpisodes
+    # else:
+    #     EPS = 0
+
+    totalRewardsAllEpisodes[i] = episodeRewards
+timerEnd = datetime.datetime.now()
+
+print(timerEnd - timerStart)
+
+plt.plot(totalRewardsAllEpisodes)
+plt.show()
