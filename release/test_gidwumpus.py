@@ -4,7 +4,6 @@ import random
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
-from IPython.display import clear_output
 
 env = gym.make('gidwumpus-v0')
 
@@ -45,7 +44,6 @@ for episode in range(numberOfEpisodes):
     rewardsCurrentEpisode = 0
 
     for step in range(maximumStepsPerEpisode):
-        clear_output(wait=True)
         rand = np.random.random()
 
         # Exploration - Exploitation swapping
@@ -70,11 +68,10 @@ for episode in range(numberOfEpisodes):
         # Add the new reward
         rewardsCurrentEpisode += reward
 
-        env.render()
-        
+        # env.render()
+
         # Has the episode ended
         if done:
-            clear_output(wait=True)
             break
 
     # Exploration rate decay
