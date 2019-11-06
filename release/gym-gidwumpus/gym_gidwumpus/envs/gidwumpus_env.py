@@ -2,6 +2,8 @@ import gym
 import numpy as np
 from gym import spaces, error, utils
 from gym.utils import seeding
+from tqdm import tqdm, trange
+# import tkinter
 
 UP = 0
 DOWN = 1
@@ -176,17 +178,35 @@ class GidWumpusEnv(gym.Env):
         return (agentX * self.nRow + agentY)
 
     def render(self, mode='human', close=False):
-        print('-------------------------')
-        p = ''
+        p = ['-------------------------']
         for indexRow, row in enumerate(self.grid):
             for indexCol, col in enumerate(row):
                 if self.agent.getXY() == (indexRow, indexCol):
-                    p += 'A\t'
+                    p.append('A\t')
                 else:
-                    p += col + '\t'
-            p += '\n'
-        print(p)
-        print('-------------------------')
+                    p.append(col + '\t')
+            p.append('\n')
+        p.append('-------------------------')
+        return p
+        
+        # tqdm.write('-------------------------\n')
+        # p = ''
+        # for indexRow, row in enumerate(self.grid):
+        #     for indexCol, col in enumerate(row):
+        #         if self.agent.getXY() == (indexRow, indexCol):
+        #             p += 'A\t'
+        #         else:
+        #             p += col + '\t'
+        #     p += '\n'
+        # tqdm.write(p)
+        # tqdm.write('-------------------------')
+
+        # mainRenderWindow = tkinter.Tk()
+        # for indexRow, row in enumerate(self.grid):
+        #     for indexCol, col in enumerate(row):
+        #         tkinter.Label(mainRenderWindow, text=str(col), borderwidth=1).grid(row=indexRow, column=indexCol)
+
+        # mainRenderWindow.mainloop()
 
     def close(self):
-        print()
+        tqdm.write()

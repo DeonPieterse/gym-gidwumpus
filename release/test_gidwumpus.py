@@ -4,6 +4,9 @@ import random
 import numpy as np
 import datetime
 import matplotlib.pyplot as plt
+import sys
+from tqdm import tqdm, trange
+from time import sleep
 
 env = gym.make('gidwumpus-v0')
 
@@ -35,9 +38,12 @@ def maxAction(qTable, state, actionSpace):
 # Time session starting
 timerStart = datetime.datetime.now()
 
-for episode in range(numberOfEpisodes):
+# Progress bar
+episodeBar = trange(numberOfEpisodes, desc='Episodes', file=sys.stdout)
+
+for episode in episodeBar:
     if episode % 1000 == 0:
-        print('starting game', episode)
+        tqdm.write("starting game %i" % episode)
 
     state = env.reset()
     done = False
@@ -68,7 +74,10 @@ for episode in range(numberOfEpisodes):
         # Add the new reward
         rewardsCurrentEpisode += reward
 
-        # env.render()
+        episodeBar.set_postfix(env.render(), refresh=True)
+
+        #episodeBar.set_description(str(episode))
+        #env.render()
 
         # Has the episode ended
         if done:
@@ -83,20 +92,20 @@ for episode in range(numberOfEpisodes):
 # Time session ended
 timerEnd = datetime.datetime.now()
 
-print(timerEnd - timerStart)
+tqdm.write(str(timerEnd - timerStart))
 
 # Calculate and print the average reward per thousand episodes
-count = 1000
+count = numberOfEpisodes * 0.1
 rewards_per_thousand_episodes = np.split(np.array(totalRewardsAllEpisodes), numberOfEpisodes/count)
 
-print("\n\n**********Average reward per thousand episodes**********\n")
+tqdm.write("\n\n**********Average reward per thousand episodes**********\n")
 for r in rewards_per_thousand_episodes:
-    print(count, ": ", str(sum(r/1000)))
+    tqdm.write("{0}: {1}".format(count, str(sum(r/1000))))
     count += 1000
 
 # Print updated Q-table
-print("\n\n**********Q-Table**********\n")
-print(qTable)
+tqdm.write("\n\n**********Q-Table**********\n")
+tqdm.write(str(qTable))
 
 plt.plot(totalRewardsAllEpisodes)
 plt.show()
