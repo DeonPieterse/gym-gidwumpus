@@ -1,1 +1,1 @@
-from gym_gidwumpus.envs.gidwumpus_env import GidWumpusEnv
+from gym_gidwumpus import GidWumpusEnv
