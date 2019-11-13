@@ -74,10 +74,7 @@ for episode in episodeBar:
         # Add the new reward
         rewardsCurrentEpisode += reward
 
-        episodeBar.set_postfix(env.render(), refresh=True)
-
-        #episodeBar.set_description(str(episode))
-        #env.render()
+        #env.render(printMode='tqdm')
 
         # Has the episode ended
         if done:

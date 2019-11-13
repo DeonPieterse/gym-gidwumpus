@@ -177,30 +177,48 @@ class GidWumpusEnv(gym.Env):
         self.agent.setXY(agentX, agentY)
         return (agentX * self.nRow + agentY)
 
-    def render(self, mode='human', close=False):
-        p = ['-------------------------']
-        for indexRow, row in enumerate(self.grid):
-            for indexCol, col in enumerate(row):
-                if self.agent.getXY() == (indexRow, indexCol):
-                    p.append('A\t')
-                else:
-                    p.append(col + '\t')
-            p.append('\n')
-        p.append('-------------------------')
-        return p
-        
-        # tqdm.write('-------------------------\n')
-        # p = ''
-        # for indexRow, row in enumerate(self.grid):
-        #     for indexCol, col in enumerate(row):
-        #         if self.agent.getXY() == (indexRow, indexCol):
-        #             p += 'A\t'
-        #         else:
-        #             p += col + '\t'
-        #     p += '\n'
-        # tqdm.write(p)
-        # tqdm.write('-------------------------')
+    def render(self, mode='human', close=False, printMode='print'):
+        if printMode == 'print':
+            print('-------------------------\n')
+            p = ''
+            for indexRow, row in enumerate(self.grid):
+                for indexCol, col in enumerate(row):
+                    if self.agent.getXY() == (indexRow, indexCol):
+                        p += 'A\t'
+                    else:
+                        p += col + '\t'
+                p += '\n'
+            print(p)
+            print('-------------------------')
 
+        elif printMode == 'tqdm':
+            tqdm.write('-------------------------\n')
+            p = ''
+            for indexRow, row in enumerate(self.grid):
+                for indexCol, col in enumerate(row):
+                    if self.agent.getXY() == (indexRow, indexCol):
+                        p += 'A\t'
+                    else:
+                        p += col + '\t'
+                p += '\n'
+            tqdm.write(p)
+            tqdm.write('-------------------------')
+            
+        else:
+            p = ['-------------------------']
+            for indexRow, row in enumerate(self.grid):
+                for indexCol, col in enumerate(row):
+                    if self.agent.getXY() == (indexRow, indexCol):
+                        p.append('A\t')
+                    else:
+                        p.append(col + '\t')
+                p.append('\n')
+            p.append('-------------------------')
+            return p
+            
+        
+        
+        
         # mainRenderWindow = tkinter.Tk()
         # for indexRow, row in enumerate(self.grid):
         #     for indexCol, col in enumerate(row):
