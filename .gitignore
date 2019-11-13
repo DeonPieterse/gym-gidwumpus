@@ -1,0 +1,12 @@
+.vs/
+.vscode/
+*.egg-info/
+__pycache__/
+/.pydevproject
+/.project
+/*.pyc
+/build
+/dist
+/build/vcredist_x86.exe
+/targets/**/*.pyc
+gym_gidwumpus.egg-info/
